@@ -18,6 +18,7 @@ export default function Login(){
   const [lastName, setLastName] = useState('')
   const [dob, setDob] = useState('')
   const [phone, setPhone] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
 
   // Redirigir automáticamente si ya hay sesión activa
@@ -47,6 +48,8 @@ export default function Login(){
       // phone: only digits and length check (7-15)
       const phoneDigits = phone.replace(/\D/g,'')
       if(!phone || phoneDigits.length < 7) newErrors.phone = 'Ingresa un número de celular válido (mínimo 7 dígitos).'
+      // confirmar contraseña
+      if(!confirmPassword || confirmPassword !== password) newErrors.confirmPassword = 'Las contraseñas no coinciden.'
     }
 
     setErrors(newErrors)
@@ -90,28 +93,39 @@ export default function Login(){
         return
       }
 
-      // Crear perfil del usuario en la tabla profiles
+      // Crear o actualizar perfil del usuario en la tabla profiles
       if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            phone: phone,
-            date_of_birth: dob,
-          })
+        try {
+          // Use upsert to create/update the profile row (no emergency contact at signup)
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .upsert([
+              {
+                id: authData.user.id,
+                first_name: firstName,
+                last_name: lastName,
+                phone: phone,
+                date_of_birth: dob,
+              }
+            ], { onConflict: 'id' })
 
-        if (profileError) {
-          console.error('Error al crear perfil:', profileError)
-          // Si el perfil falla, mostrar error pero el usuario ya está creado
+          if (profileError) {
+            console.error('Error al upsertar perfil:', profileError)
+            setErrors({ email: 'Usuario creado pero hubo un problema al guardar el perfil. Contacta soporte.' })
+            return
+          }
+
+          console.log('Perfil creado/actualizado:', profileData)
+          alert('¡Registro exitoso! Revisa tu email para confirmar tu cuenta (si está habilitado).')
+          navigate('/dashboard')
+        } catch (err) {
+          console.error('Error inesperado al crear/actualizar perfil:', err)
           setErrors({ email: 'Usuario creado pero hubo un problema con el perfil. Contacta soporte.' })
           return
         }
-
-        console.log('Registro exitoso:', authData)
-        alert('¡Registro exitoso! Revisa tu email para confirmar tu cuenta (si está habilitado).')
-        navigate('/dashboard')
+      } else {
+        // authData.user is not present (email confirmation likely required).
+        alert('Registro iniciado. Revisa tu email para confirmar la cuenta.')
       }
     } catch (err) {
       console.error('Error inesperado:', err)
@@ -128,17 +142,17 @@ export default function Login(){
               <>
                 <label>
                   Nombre
-                  <input className={errors.firstName? 'input-error':''} type="text" value={firstName} onChange={e=>setFirstName(e.target.value)} required />
+                  <input className={`${errors.firstName? 'input-error':''} auth-input`} type="text" value={firstName} onChange={e=>setFirstName(e.target.value)} required />
                   {errors.firstName && <div className="error-text">{errors.firstName}</div>}
                 </label>
                 <label>
                   Apellido
-                  <input className={errors.lastName? 'input-error':''} type="text" value={lastName} onChange={e=>setLastName(e.target.value)} required />
+                  <input className={`${errors.lastName? 'input-error':''} auth-input`} type="text" value={lastName} onChange={e=>setLastName(e.target.value)} required />
                   {errors.lastName && <div className="error-text">{errors.lastName}</div>}
                 </label>
                 <label>
                   Fecha de nacimiento
-                  <input className={errors.dob? 'input-error':''} type="date" value={dob} onChange={e=>setDob(e.target.value)} required />
+                  <input className={`${errors.dob? 'input-error':''} auth-input`} type="date" value={dob} onChange={e=>setDob(e.target.value)} required />
                   {errors.dob && <div className="error-text">{errors.dob}</div>}
                 </label>
               </>
@@ -146,22 +160,34 @@ export default function Login(){
 
             <label>
               Correo
-              <input className={errors.email? 'input-error':''} type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
+              <input className={`${errors.email? 'input-error':''} auth-input`} type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
               {errors.email && <div className="error-text">{errors.email}</div>}
             </label>
 
             <label>
               Contraseña
-              <input className={errors.password? 'input-error':''} type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
+              <input className={`${errors.password? 'input-error':''} auth-input`} type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
               {errors.password && <div className="error-text">{errors.password}</div>}
             </label>
 
             {mode === 'register' && (
               <label>
-                Número celular
-                <input className={errors.phone? 'input-error':''} type="tel" value={phone} onChange={e=>setPhone(e.target.value)} required />
-                {errors.phone && <div className="error-text">{errors.phone}</div>}
+                Repetir contraseña
+                <input className={`${errors.confirmPassword? 'input-error':''} auth-input`} type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} required />
+                {errors.confirmPassword && <div className="error-text">{errors.confirmPassword}</div>}
               </label>
+            )}
+
+            {mode === 'register' && (
+              <>
+                <label>
+                  Número celular
+                  <input className={`${errors.phone? 'input-error':''} auth-input`} type="tel" inputMode="tel" value={phone} onChange={e=>setPhone(e.target.value)} required />
+                  {errors.phone && <div className="error-text">{errors.phone}</div>}
+                </label>
+
+                
+              </>
             )}
 
             <button className="btn-primary" type="submit">{mode === 'login' ? 'Entrar' : 'Crear cuenta'}</button>

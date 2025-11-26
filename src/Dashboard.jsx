@@ -28,6 +28,23 @@ export default function Dashboard(){
   })
   const [profileErrors, setProfileErrors] = useState({})
 
+  // Helpers para calcular inicio/fin de semana (Lunes a Domingo)
+  function startOfWeekISO(date = new Date()) {
+    const d = new Date(date)
+    const day = d.getDay() // 0 (Sun) ... 6 (Sat)
+    const diff = (day + 6) % 7 // days since Monday
+    d.setDate(d.getDate() - diff)
+    d.setHours(0,0,0,0)
+    return d.toISOString()
+  }
+
+  function endOfWeekISO(date = new Date()) {
+    const start = new Date(startOfWeekISO(date))
+    start.setDate(start.getDate() + 7)
+    start.setHours(0,0,0,0)
+    return start.toISOString()
+  }
+
   // Cargar datos al montar el componente
   useEffect(() => {
     if (profile) {
@@ -143,17 +160,67 @@ export default function Dashboard(){
         if (error) throw error
         alert(`Te diste de baja de ${day} - ${hour}`)
       } else {
-        // Inscribirse
-        const { error } = await supabase
-          .from('enrollments')
-          .insert({
-            user_id: user.id,
-            schedule_id: scheduleId,
-            status: 'active'
-          })
-        
-        if (error) throw error
-        alert(`Te inscribiste a ${day} - ${hour}`)
+        // Inscribirse: regla mensual
+        const today = new Date()
+        const dayOfMonth = today.getDate()
+
+        // Del 1 al 7: permitir inscripción sin chequear pago
+        if (dayOfMonth >= 1 && dayOfMonth <= 7) {
+          const { error } = await supabase
+            .from('enrollments')
+            .insert({ user_id: user.id, schedule_id: scheduleId, status: 'active' })
+
+          if (error) throw error
+          alert(`Te inscribiste a ${day} - ${hour}`)
+        } else {
+          // Después del día 7: verificar que el último pago sea del mes actual
+            const lastPayment = profile?.last_payment_date
+            function paidThisMonth(dateStr) {
+              if (!dateStr) return false
+              const d = new Date(dateStr)
+              const now = new Date()
+              return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+            }
+
+            if (!paidThisMonth(lastPayment)) {
+              alert('Adeudas la cuota, comunicate con Matias')
+              return
+            }
+
+            // El campo `cant_por_semana` ahora sólo sirve como límite semanal
+            const rawLimit = profile?.cant_por_semana
+            const limit = parseInt(rawLimit, 10)
+            if (!limit || isNaN(limit) || limit <= 0) {
+              alert('Tu plan no tiene un cupo válido. Comunicate con Matias')
+              return
+            }
+
+            // Aplicar límite semanal (Lunes a lunes)
+            const start = startOfWeekISO(new Date())
+            const end = endOfWeekISO(new Date())
+
+            const countRes = await supabase
+              .from('enrollments')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .gte('enrolled_at', start)
+              .lt('enrolled_at', end)
+
+            if (countRes.error) throw countRes.error
+            const currentCount = countRes.count || 0
+
+            if (currentCount >= limit) {
+              alert(`No podés anotarte a más de ${limit} entrenamientos por semana.`)
+            } else {
+              const { error } = await supabase
+                .from('enrollments')
+                .insert({ user_id: user.id, schedule_id: scheduleId, status: 'active' })
+
+              if (error) throw error
+              alert(`Te inscribiste a ${day} - ${hour}`)
+            }
+        }
       }
       
       // Recargar inscripciones
@@ -268,8 +335,22 @@ export default function Dashboard(){
       <div className="page page-center">
         <div className="auth-card" style={{maxWidth:520}}>
           <h2>Realizar el pago mensual</h2>
-          <p style={{color:'var(--muted)',marginBottom:'1.5rem',fontSize:'0.9rem'}}>Transferí el monto correspondiente a la siguiente cuenta</p>
-          
+
+          <div style={{display:'flex',gap:'0.4rem',marginBottom:'1rem',flexWrap:'nowrap',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
+              <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>3 x semana</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700}}>$31.000</div>
+            </div>
+            <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
+              <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>2 x semana</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700}}>$26.000</div>
+            </div>
+            <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
+              <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>Clase personal</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700}}>$10.000</div>
+            </div>
+          </div>
+
           <div style={{background:'#f9fafb',padding:'1.25rem',borderRadius:'10px',marginBottom:'1rem'}}>
             <div style={{marginBottom:'1rem'}}>
               <p style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:'0.25rem',fontWeight:600}}>CBU</p>
@@ -289,7 +370,7 @@ export default function Dashboard(){
 
           <div style={{background:'#fef3c7',padding:'1rem',borderRadius:'8px',marginBottom:'1.5rem',border:'1px solid #fcd34d'}}>
             <p style={{fontSize:'0.85rem',color:'#92400e',margin:0}}>
-              <strong>⚠️ Importante:</strong> Una vez realizada la transferencia, enviá el comprobante por WhatsApp al +54 9 223 123-4567
+              <strong>⚠️ Importante:</strong> Una vez realizada la transferencia, enviá el comprobante por WhatsApp al +54 9 223 123-4567 (Matias) para confirmar tu pago.
             </p>
           </div>
 
@@ -312,79 +393,52 @@ export default function Dashboard(){
         <div className="auth-card" style={{maxWidth:720}}>
           <h2>Anotarme al entrenamiento</h2>
           <p style={{color:'var(--muted)',marginBottom:'1rem',fontSize:'0.9rem'}}>Selecciona los días y horarios</p>
-          
-          <div className="enrollment-grid">
-            <table style={{width:'100%',borderCollapse:'collapse'}}>
-              <thead>
-                <tr>
-                  <th style={{padding:'0.75rem',textAlign:'left',borderBottom:'2px solid #e6e9ef',color:'var(--text)',fontWeight:600}}>Día</th>
-                  {hours.map(hour => (
-                    <th key={hour} style={{padding:'0.75rem',textAlign:'center',borderBottom:'2px solid #e6e9ef',color:'var(--text)',fontWeight:600}}>{hour}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {days.map(day => (
-                  <tr key={day}>
-                    <td style={{padding:'0.75rem',borderBottom:'1px solid #e6e9ef',fontWeight:500}}>{day}</td>
-                    {hours.map(hour => {
-                      const scheduleId = getScheduleId(day, hour)
-                      const enrolled = scheduleId && isEnrolled(scheduleId)
-                      
-                      return (
-                        <td key={hour} style={{padding:'0.75rem',textAlign:'center',borderBottom:'1px solid #e6e9ef'}}>
-                          <button 
-                            onClick={() => scheduleId && toggleEnrollment(scheduleId, day, hour)}
-                            className="btn-enroll"
-                            disabled={!scheduleId || loading}
-                            style={{
-                              background: enrolled ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,var(--blue-1),var(--blue-2))',
-                              color:'white',
-                              padding:'0.5rem 1rem',
-                              borderRadius:'8px',
-                              border:'none',
-                              fontWeight:600,
-                              cursor: scheduleId ? 'pointer' : 'not-allowed',
-                              fontSize:'0.85rem',
-                              minWidth:'100px',
-                              transition:'opacity 0.2s',
-                              opacity: scheduleId ? 1 : 0.5
-                            }}
-                            onMouseOver={(e) => e.target.style.opacity = '0.9'}
-                            onMouseOut={(e) => e.target.style.opacity = '1'}
-                          >
-                            {enrolled ? '✓ Anotado' : 'Anotarme'}
-                          </button>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {schedules.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--muted)', padding: '1rem' }}>No hay entrenamientos activos por el momento.</p>
+            ) : (
+              schedules.map(schedule => {
+                const enrolled = isEnrolled(schedule.id)
+                return (
+                  <div key={schedule.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e6e9ef' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '1rem' }}>{schedule.day_of_week} — {schedule.time_slot}</div>
+                      {schedule.max_capacity != null && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Capacidad: {schedule.max_capacity}</div>
+                      )}
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => toggleEnrollment(schedule.id, schedule.day_of_week, schedule.time_slot)}
+                        className="btn-enroll"
+                        disabled={loading}
+                        style={{
+                          background: enrolled ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,var(--blue-1),var(--blue-2))',
+                          color: 'white',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        {enrolled ? '✓ Anotado' : 'Anotarme'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
 
-          <div style={{marginTop:'1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem'}}>
-            <button 
-              onClick={() => setView('menu')}
-              style={{color:'var(--muted)',fontSize:'0.9rem',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}
-            >
-              ← Volver al menú
-            </button>
-            <button 
-              className="btn-primary"
-              style={{padding:'0.5rem 1rem',fontSize:'0.9rem'}}
-              onClick={() => {
-                const enrolled = Object.entries(enrollments).filter(([_, val]) => val).map(([key]) => key)
-                if(enrolled.length > 0){
-                  alert(`Has sido inscrito en: ${enrolled.join(', ')}`)
-                } else {
-                  alert('No has seleccionado ningún horario')
-                }
-              }}
-            >
-              Confirmar inscripción
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+              <button
+                onClick={() => setView('menu')}
+                style={{ color: 'var(--muted)', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                ← Volver al menú
+              </button>
+            </div>
           </div>
         </div>
       </div>

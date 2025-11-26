@@ -8,16 +8,16 @@ export default function Admin() {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [view, setView] = useState(searchParams.get('view') || 'menu') // 'menu', 'users', 'enrollments', 'payments', 'schedules'
+  const [view, setView] = useState(searchParams.get('view') || 'menu') // 'menu', 'users', 'enrollments', 'schedules'
   const [users, setUsers] = useState([])
   const [enrollments, setEnrollments] = useState([])
-  const [payments, setPayments] = useState([])
   const [schedules, setSchedules] = useState([])
   const [loading, setLoading] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState(null)
   const [newSchedule, setNewSchedule] = useState({ day_of_week: '', max_capacity: 15 })
   const [timeStart, setTimeStart] = useState('')
   const [editingUserDueDate, setEditingUserDueDate] = useState(null)
+  const [editingUserValues, setEditingUserValues] = useState({})
   const [showEnrolledModal, setShowEnrolledModal] = useState(false)
   const [enrolledUsers, setEnrolledUsers] = useState([])
   const [stats, setStats] = useState({
@@ -39,26 +39,38 @@ export default function Admin() {
   useEffect(() => {
     if (view === 'users') loadUsers()
     if (view === 'enrollments') loadEnrollments()
-    if (view === 'payments') loadPayments()
     if (view === 'schedules') loadSchedules()
   }, [view])
 
   async function loadStats() {
     try {
-      const [usersRes, enrollmentsRes, paymentsRes] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('enrollments').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('payments').select('amount, status')
-      ])
+      // Count only real users (exclude admins)
+      const usersRes = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'user')
 
-      const pendingPayments = paymentsRes.data?.filter(p => p.status === 'pending').length || 0
-      const totalRevenue = paymentsRes.data
-        ?.filter(p => p.status === 'verified')
-        .reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0
+      // Calculate paid users this month: users with last_payment_date inside current month
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      const startIso = startOfMonth.toISOString()
+      const endIso = startOfNextMonth.toISOString()
+
+      const paidThisMonthRes = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'user')
+        .gte('last_payment_date', startIso)
+        .lt('last_payment_date', endIso)
+
+      // payments table removed — metrics default to zero
+      const pendingPayments = 0
+      const totalRevenue = 0
 
       setStats({
         totalUsers: usersRes.count || 0,
-        totalEnrollments: enrollmentsRes.count || 0,
+        totalEnrollments: paidThisMonthRes.count || 0,
         pendingPayments,
         totalRevenue
       })
@@ -73,7 +85,8 @@ export default function Admin() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('role', 'user')
+        .order('id', { ascending: false })
 
       if (error) throw error
       setUsers(data || [])
@@ -108,44 +121,7 @@ export default function Admin() {
     }
   }
 
-  async function loadPayments() {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*, profiles(first_name, last_name, email)')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setPayments(data || [])
-    } catch (error) {
-      console.error('Error loading payments:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function updatePaymentStatus(paymentId, newStatus) {
-    try {
-      const { error } = await supabase
-        .from('payments')
-        .update({
-          status: newStatus,
-          verified_at: newStatus === 'verified' ? new Date().toISOString() : null,
-          verified_by: newStatus === 'verified' ? profile.id : null
-        })
-        .eq('id', paymentId)
-
-      if (error) throw error
-
-      alert(`Pago ${newStatus === 'verified' ? 'verificado' : 'rechazado'} correctamente`)
-      loadPayments()
-      loadStats()
-    } catch (error) {
-      console.error('Error updating payment:', error)
-      alert('Error al actualizar el pago')
-    }
-  }
+  
 
   async function loadSchedules() {
     setLoading(true)
@@ -176,6 +152,13 @@ export default function Admin() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function isPaidThisMonth(lastPaymentDate) {
+    if (!lastPaymentDate) return false
+    const d = new Date(lastPaymentDate)
+    const now = new Date()
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
   }
 
   async function createSchedule() {
@@ -260,21 +243,41 @@ export default function Admin() {
     return schedule ? `${schedule.day_of_week} - ${schedule.time_slot}` : 'N/A'
   }
 
-  async function updateUserDueDate(userId, paymentDate) {
+  async function updateUserProfile(userId, updates) {
     try {
-      const { error } = await supabase
+      console.log('updateUserProfile called', { userId, updates })
+
+      const res = await supabase
         .from('profiles')
-        .update({ last_payment_date: paymentDate })
+        .update(updates)
         .eq('id', userId)
+        .select()
 
-      if (error) throw error
+      console.log('updateUserProfile response', res)
 
-      alert('Fecha de pago actualizada correctamente')
-      setEditingUserDueDate(null)
-      loadUsers()
+      if (res.error) {
+        console.error('Error updating profile (supabase):', res.error)
+        alert(`No se pudo actualizar el perfil: ${res.error.message || res.error}`)
+        return false
+      }
+
+      if (!res.data || res.data.length === 0) {
+        console.warn('Update returned no rows. Verifying profile existence and permissions...')
+        const sel = await supabase.from('profiles').select('*').eq('id', userId)
+        console.log('select profile result', sel)
+
+        alert('La actualización no afectó filas. Revisa la consola para más detalles (posible mismatch de ID o permisos RLS).')
+        return false
+      }
+
+      alert('Actualizado correctamente')
+      // Keep editing state so admin can change more fields; just reload the list
+      await loadUsers()
+      return true
     } catch (error) {
-      console.error('Error updating payment date:', error)
-      alert('Error al actualizar la fecha de pago')
+      console.error('Error updating profile:', error)
+      alert('Error al actualizar el perfil')
+      return false
     }
   }
 
@@ -365,83 +368,77 @@ export default function Admin() {
           {loading ? (
             <p style={{ padding: '0 0.5rem' }}>Cargando...</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="users-grid">
               {users.map(user => (
-                <div key={user.id} style={{ 
-                  background: '#f9fafb', 
-                  padding: '1rem', 
-                  borderRadius: '8px',
-                  border: '1px solid #e6e9ef'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div key={user.id} className="user-card">
+                  <div className="user-card-header">
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>
-                        {user.first_name} {user.last_name}
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-                        {user.phone || 'Sin teléfono'}
-                      </div>
+                      <div className="user-name">{user.first_name} {user.last_name}</div>
+                      <div className="user-phone">{user.phone || 'Sin teléfono'}</div>
                     </div>
-                    <span style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      background: '#d1fae5',
-                      color: '#065f46',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      Al día
-                    </span>
+                    {isPaidThisMonth(user.last_payment_date) ? (
+                      <div className="user-badge">al dia</div>
+                    ) : (
+                      <div className="user-badge unpaid">impago</div>
+                    )}
                   </div>
 
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '1fr auto', 
-                    gap: '0.5rem', 
-                    alignItems: 'center',
-                    paddingTop: '0.75rem',
-                    borderTop: '1px solid #e6e9ef'
-                  }}>
+                  <div className="user-card-footer">
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>
-                        Último pago
-                      </div>
+                      <div className="muted small">Último pago</div>
                       {editingUserDueDate === user.id ? (
-                        <input
-                          type="date"
-                          defaultValue={user.last_payment_date || ''}
-                          onBlur={(e) => updateUserDueDate(user.id, e.target.value)}
-                          autoFocus
-                          style={{ 
-                            padding: '0.4rem', 
-                            borderRadius: '6px', 
-                            border: '1px solid #e6e9ef', 
-                            fontSize: '0.85rem',
-                            width: '100%'
-                          }}
-                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input
+                            type="date"
+                            value={(editingUserValues[user.id] && editingUserValues[user.id].last_payment_date) ?? (user.last_payment_date || '')}
+                            onChange={(e) => setEditingUserValues(prev => ({ ...prev, [user.id]: { ...(prev[user.id] || {}), last_payment_date: e.target.value } }))}
+                            autoFocus
+                            className="small-input"
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.15rem' }}>Cant veces</label>
+                            <select
+                              value={(editingUserValues[user.id] && editingUserValues[user.id].cant_por_semana) ?? (user.cant_por_semana ?? 2)}
+                              onChange={(e) => setEditingUserValues(prev => ({ ...prev, [user.id]: { ...(prev[user.id] || {}), cant_por_semana: e.target.value } }))}
+                              className="small-input"
+                              style={{ padding: '0.35rem' }}
+                            >
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                            </select>
+                          </div>
+                        </div>
                       ) : (
-                        <div style={{ 
-                          fontSize: '0.9rem',
-                          color: user.last_payment_date ? 'inherit' : 'var(--muted)' 
-                        }}>
+                        <div className="last-payment">
                           {user.last_payment_date ? new Date(user.last_payment_date).toLocaleDateString('es-AR') : 'Sin pago'}
+                          <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
+                            Cant por semana: {user.cant_por_semana || '—'}
+                          </div>
                         </div>
                       )}
                     </div>
                     <button
-                      onClick={() => setEditingUserDueDate(editingUserDueDate === user.id ? null : user.id)}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.85rem',
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: 600
+                      onClick={() => {
+                        if (editingUserDueDate === user.id) {
+                          // Save values
+                          const vals = editingUserValues[user.id] || {}
+                          const payload = {
+                            last_payment_date: vals.last_payment_date || null,
+                            cant_por_semana: vals.cant_por_semana ? parseInt(vals.cant_por_semana) : null
+                          }
+                          updateUserProfile(user.id, payload).then((ok) => {
+                            if (ok) {
+                              setEditingUserDueDate(null)
+                              setEditingUserValues(prev => { const next = { ...prev }; delete next[user.id]; return next })
+                            }
+                          })
+                        } else {
+                          // Enter edit mode and prefill values
+                          setEditingUserDueDate(user.id)
+                          setEditingUserValues(prev => ({ ...prev, [user.id]: { last_payment_date: user.last_payment_date || '', cant_por_semana: user.cant_por_semana ?? 2 } }))
+                        }
                       }}
+                      className="edit-btn"
                     >
                       {editingUserDueDate === user.id ? '✓' : '✏️'}
                     </button>
@@ -525,71 +522,7 @@ export default function Admin() {
     )
   }
 
-  // Vista de pagos
-  if (view === 'payments') {
-    return (
-      <div className="site">
-        <div className="site-inner" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-        <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 12px 36px rgba(2,6,23,0.08)', maxWidth: 520, margin: '0 auto' }}>
-          <h2>Gestión de pagos</h2>
-          <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Registra un nuevo pago
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                Nombre
-              </label>
-              <input
-                type="text"
-                placeholder="Ingresa el nombre"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #e6e9ef', fontSize: '0.9rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                Apellido
-              </label>
-              <input
-                type="text"
-                placeholder="Ingresa el apellido"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #e6e9ef', fontSize: '0.9rem' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                Fecha de pago
-              </label>
-              <input
-                type="date"
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #e6e9ef', fontSize: '0.9rem' }}
-              />
-            </div>
-
-            <button
-              className="btn-primary"
-              style={{ width: '100%', fontSize: '0.95rem', marginTop: '0.5rem' }}
-            >
-              Guardar
-            </button>
-          </div>
-
-          <div style={{ marginTop: '1.5rem' }}>
-            <button
-              onClick={() => navigate('/admin')}
-              style={{ color: 'var(--muted)', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              ← Volver al menú
-            </button>
-          </div>
-        </div>
-        </div>
-      </div>
-    )
-  }
+  
 
   // Vista de gestión de entrenamientos
   if (view === 'schedules') {

@@ -174,6 +174,15 @@ body{
   border:1px solid #e6e9ef;
   border-radius:8px
 }
+
+/* explicit class for consistent inputs */
+.auth-form .auth-input{
+  padding:0.45rem 0.6rem;
+  border:1px solid #e6e9ef;
+  border-radius:8px;
+  font-size:1rem;
+  box-sizing:border-box;
+}
 .btn-primary{
   background:linear-gradient(90deg,var(--blue-1),var(--blue-2));
   color:white;
@@ -191,6 +200,33 @@ body{
 .input-error{border-color:#e11d48}
 .error-text{color:#e11d48;font-size:0.85rem;margin-top:0.35rem}
 
+/* Users grid and cards */
+.users-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:0.75rem;
+}
+.user-card{
+  background:#f9fafb;
+  padding:1rem;
+  border-radius:8px;
+  border:1px solid #e6e9ef;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.user-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem}
+.user-name{font-weight:600;font-size:1rem;margin-bottom:0.25rem}
+.user-phone{font-size:0.85rem;color:var(--muted)}
+.user-badge{padding:0.25rem 0.75rem;border-radius:12px;font-size:0.75rem;font-weight:600;background:#d1fae5;color:#065f46;white-space:nowrap}
+.user-badge.unpaid{background: #fee2e2; color: #dc2626}
+.user-card-footer{display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:center;padding-top:0.75rem;border-top:1px solid #e6e9ef}
+.muted.small{font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem}
+.small-input{padding:0.4rem;border-radius:6px;border:1px solid #e6e9ef;font-size:0.85rem;width:100%}
+.last-payment{font-size:0.9rem;color:var(--muted)}
+.edit-btn{padding:0.5rem 1rem;font-size:0.85rem;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+
 /* Responsive */
 @media (min-width:700px){
   .feature-cards{justify-content:center}
@@ -200,14 +236,17 @@ body{
   
   /* Estilos de escritorio para Login */
   .page-center .auth-card{
-    position:fixed;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
+    /* keep centered horizontally but not fixed vertically so page can scroll */
+    position:relative;
+    left:auto;
+    top:auto;
+    transform:none;
     z-index:80;
-    margin:0;
+    margin:2rem auto;
     width:clamp(320px, 40vw, 420px);
     max-width:90vw;
+    max-height:90vh;
+    overflow-y:auto;
   }
 }
 @media (min-width:1000px){
