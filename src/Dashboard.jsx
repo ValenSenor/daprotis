@@ -344,12 +344,12 @@ export default function Dashboard(){
           <div style={{background:'#f9fafb',padding:'1.25rem',borderRadius:'10px',marginBottom:'1rem'}}>
             <div style={{marginBottom:'1rem'}}>
               <p style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:'0.25rem',fontWeight:600}}>CBU</p>
-              <p style={{fontSize:'1.1rem',color:'var(--text)',fontWeight:700,margin:0,letterSpacing:'0.5px'}}>0000003100012345678901</p>
+              <p style={{fontSize:'1.1rem',color:'var(--text)',fontWeight:700,margin:0,letterSpacing:'0.5px'}}>3840200500000044625113</p>
             </div>
             
             <div style={{marginBottom:'1rem'}}>
               <p style={{fontSize:'0.85rem',color:'var(--muted)',marginBottom:'0.25rem',fontWeight:600}}>Alias</p>
-              <p style={{fontSize:'1.1rem',color:'var(--text)',fontWeight:700,margin:0}}>escuela.daprotis</p>
+              <p style={{fontSize:'1.1rem',color:'var(--text)',fontWeight:700,margin:0}}>DaprotisFutvoley</p>
             </div>
             
             <div>
@@ -360,7 +360,7 @@ export default function Dashboard(){
 
           <div style={{background:'#fef3c7',padding:'1rem',borderRadius:'8px',marginBottom:'1.5rem',border:'1px solid #fcd34d'}}>
             <p style={{fontSize:'0.85rem',color:'#92400e',margin:0}}>
-              <strong>⚠️ Importante:</strong> Una vez realizada la transferencia, enviá el comprobante por WhatsApp al +54 9 223 123-4567 (Matias) para confirmar tu pago.
+              <strong>⚠️ Importante:</strong> Una vez realizada la transferencia, enviá el comprobante por WhatsApp al +54 9 2235829356 (Matias) para confirmar tu pago.
             </p>
           </div>
 
