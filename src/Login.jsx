@@ -93,15 +93,33 @@ export default function Login(){
         return
       }
 
-      // Crear o actualizar perfil del usuario en la tabla profiles
-      if (authData.user) {
+      // Try to sign the user in immediately. If the signup already returned a user
+      // the session will be active; otherwise attempt signInWithPassword.
+      let createdUser = authData?.user ?? null
+      if (!createdUser) {
         try {
-          // Use upsert to create/update the profile row (no emergency contact at signup)
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+          if (signInError) {
+            // Sign-in failed (could be because email confirmation is required).
+            // We will not show the verification alert — silently continue and
+            // rely on AuthContext to redirect if no session is active.
+            console.warn('Auto sign-in after signup failed:', signInError)
+          } else {
+            createdUser = signInData?.user ?? createdUser
+          }
+        } catch (err) {
+          console.warn('Auto sign-in attempt error:', err)
+        }
+      }
+
+      // If we have a user id, upsert the profile row so admin/user data exists.
+      if (createdUser) {
+        try {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .upsert([
               {
-                id: authData.user.id,
+                id: createdUser.id,
                 first_name: firstName,
                 last_name: lastName,
                 phone: phone,
@@ -116,17 +134,20 @@ export default function Login(){
           }
 
           console.log('Perfil creado/actualizado:', profileData)
-          alert('¡Registro exitoso! Revisa tu email para confirmar tu cuenta (si está habilitado).')
+          // Navigate — AuthContext will detect the session and keep the user logged in
           navigate('/dashboard')
+          return
         } catch (err) {
           console.error('Error inesperado al crear/actualizar perfil:', err)
           setErrors({ email: 'Usuario creado pero hubo un problema con el perfil. Contacta soporte.' })
           return
         }
-      } else {
-        // authData.user is not present (email confirmation likely required).
-        alert('Registro iniciado. Revisa tu email para confirmar la cuenta.')
       }
+
+      // If we reach here, signup succeeded but we don't have an active session.
+      // Do not show a verification alert; instead navigate to dashboard — if the
+      // session is not active, ProtectedRoute will redirect to /login silently.
+      navigate('/dashboard')
     } catch (err) {
       console.error('Error inesperado:', err)
       setErrors({ email: 'Ocurrió un error. Intenta nuevamente.' })
