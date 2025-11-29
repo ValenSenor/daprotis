@@ -305,20 +305,24 @@ export default function Admin() {
       <div className="site">
         <div className="site-inner" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 12px 36px rgba(2,6,23,0.08)', maxWidth: 720, margin: '0 auto' }}>
-          <h2>Panel de Administración</h2>
+          <h2 style={{ color: '#0c0c0c' }}>Panel de Administración</h2>
           <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
             Bienvenido, {profile?.first_name}
           </p>
 
           {/* Tarjetas de estadísticas */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div style={{ background: '#f0f9ff', padding: '1.25rem', borderRadius: '10px', textAlign: 'center' }}>
-              <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--blue-1)', margin: 0 }}>{stats.totalUsers}</p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0.25rem 0 0' }}>Alumnos registrados</p>
+              <div style={{ background: 'rgb(250,234,5)', padding: '1.25rem', borderRadius: '10px', textAlign: 'center' }}>
+              <p style={{ fontSize: '2rem', fontWeight: 700, color: '#0c0c0c', margin: 0 }}>{stats.totalUsers}</p>
+              <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                <span style={{ background: 'rgb(250,234,5)', color: '#0c0c0c', padding: '0.2rem 0.5rem', borderRadius: '999px', fontWeight: 700, display: 'inline-block' }}>Alumnos registrados</span>
+              </p>
             </div>
-            <div style={{ background: '#f0fdf4', padding: '1.25rem', borderRadius: '10px', textAlign: 'center' }}>
-              <p style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981', margin: 0 }}>{stats.totalEnrollments}</p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0.25rem 0 0' }}>Alumnos al dia</p>
+            <div style={{ background: 'rgb(250,234,5)', padding: '1.25rem', borderRadius: '10px', textAlign: 'center' }}>
+              <p style={{ fontSize: '2rem', fontWeight: 700, color: '#0c0c0c', margin: 0 }}>{stats.totalEnrollments}</p>
+              <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                <span style={{ background: 'rgb(250,234,5)', color: '#0c0c0c', padding: '0.2rem 0.5rem', borderRadius: '999px', fontWeight: 700, display: 'inline-block' }}>Alumnos al dia</span>
+              </p>
             </div>
           </div>
 
@@ -360,7 +364,7 @@ export default function Admin() {
       <div className="site">
         <div className="site-inner" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', boxShadow: '0 12px 36px rgba(2,6,23,0.08)', maxWidth: 920, margin: '0 auto' }}>
-          <h2 style={{ padding: '0 0.5rem' }}>Usuarios registrados</h2>
+          <h2 style={{ padding: '0 0.5rem', color: '#0c0c0c' }}>Usuarios registrados</h2>
           <p style={{ color: 'var(--muted)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 0.5rem' }}>
             Total: {users.length} usuarios
           </p>
@@ -530,14 +534,14 @@ export default function Admin() {
       <div className="site">
         <div className="site-inner" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
         <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', boxShadow: '0 12px 36px rgba(2,6,23,0.08)', maxWidth: 920, margin: '0 auto', position: 'relative' }}>
-          <h2 style={{ padding: '0 0.5rem' }}>Gestión de entrenamientos</h2>
+          <h2 style={{ padding: '0 0.5rem', color: '#0c0c0c' }}>Gestión de entrenamientos</h2>
           <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '0.9rem', padding: '0 0.5rem' }}>
             Crea, edita o elimina horarios de entrenamiento
           </p>
 
           {/* Formulario para crear nuevo horario */}
           <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Crear nuevo horario</h3>
+            <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: '#0c0c0c' }}>Crear nuevo horario</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
@@ -631,7 +635,7 @@ export default function Admin() {
                           <option value="Sábado">Sábado</option>
                         </select>
                       ) : (
-                        <div style={{ fontWeight: 600, fontSize: '1rem', flex: 1 }}>{schedule.day_of_week}</div>
+                        <div style={{ fontWeight: 600, fontSize: '1rem', flex: 1, color: '#0c0c0c' }}>{schedule.day_of_week}</div>
                       )}
                     </div>
                     <div>
@@ -658,7 +662,7 @@ export default function Admin() {
                     marginBottom: '0.75rem'
                   }}>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#0c0c0c', marginBottom: '0.25rem' }}>
                         Inscriptos
                       </div>
                       <span 
@@ -667,9 +671,9 @@ export default function Admin() {
                           display: 'inline-block',
                           padding: '0.25rem 0.75rem',
                           borderRadius: '12px',
-                          background: schedule.enrolled >= schedule.max_capacity ? '#fee2e2' : '#f0fdf4',
-                          color: schedule.enrolled >= schedule.max_capacity ? '#dc2626' : '#10b981',
-                          fontWeight: 600,
+                          background: '#FFD400',
+                          color: '#0c0c0c',
+                          fontWeight: 700,
                           fontSize: '0.85rem',
                           cursor: schedule.enrolled > 0 ? 'pointer' : 'default'
                         }}
@@ -678,7 +682,7 @@ export default function Admin() {
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#0c0c0c', marginBottom: '0.25rem' }}>
                         Capacidad máxima
                       </div>
                       {editingSchedule === schedule.id ? (
@@ -690,7 +694,7 @@ export default function Admin() {
                           style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #e6e9ef', fontSize: '0.85rem', width: '80px' }}
                         />
                       ) : (
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{schedule.max_capacity}</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0c0c0c' }}>{schedule.max_capacity}</div>
                       )}
                     </div>
                   </div>
@@ -722,8 +726,8 @@ export default function Admin() {
                             flex: 1,
                             padding: '0.5rem',
                             fontSize: '0.85rem',
-                            background: '#3b82f6',
-                            color: 'white',
+                            background: 'rgb(250,234,5)',
+                            color: '#0c0c0c',
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
@@ -800,9 +804,9 @@ export default function Admin() {
                 }}
               >
                 <div className="auth-card" style={{ padding: '1rem', margin: 0, minHeight: 'auto', height: 'auto' }}>
-                  <h3 style={{ marginBottom: '0.5rem', fontSize: '1.4rem', marginTop: 0,textAlign: 'center' ,fontWeight: 600 }}>Alumnos inscriptos</h3>
+                  <h3 style={{ marginBottom: '0.5rem', fontSize: '1.4rem', marginTop: 0,textAlign: 'center' ,fontWeight: 600, color: '#0c0c0c' }}>Alumnos inscriptos</h3>
                   {enrolledUsers.length === 0 ? (
-                    <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '0.5rem 0', margin: 0 }}>
+                    <p style={{ color: '#0c0c0c', textAlign: 'center', padding: '0.5rem 0', margin: 0 }}>
                       No hay alumnos inscriptos en este horario
                     </p>
                   ) : (
@@ -814,7 +818,8 @@ export default function Admin() {
                             padding: '0.5rem 0',
                             borderBottom: index < enrolledUsers.length - 1 ? '1px solid #e6e9ef' : 'none',
                             fontSize: '1.1rem',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            color: '#0c0c0c'
                           }}
                         >
                           {enrollment.profiles?.first_name} {enrollment.profiles?.last_name}
@@ -825,7 +830,7 @@ export default function Admin() {
                   <button
                     onClick={() => setShowEnrolledModal(false)}
                     className="btn-primary"
-                    style={{ width: '100%', marginTop: '0.75rem', padding: '0.5rem', fontSize: '0.85rem' }}
+                    style={{ width: '100%', marginTop: '0.75rem', padding: '0.5rem', fontSize: '0.85rem', color: '#0c0c0c' }}
                   >
                     Cerrar
                   </button>

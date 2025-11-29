@@ -6,35 +6,27 @@ function App() {
     <div className="site">
       <div className="site-inner">
         <header className="site-header">
-          <div className="logo-wrap">
-            <div className="site-title">
-              <strong>Escuela Futvoley Daprotis</strong>
-              <span className="site-tagline">Pasión por el deporte</span>
-            </div>
-          </div>
           <Link className="btn-login" to="/login">Iniciar Sesión</Link>
         </header>
       </div>
 
       <main>
+        {/* Image placed outside the blue hero rectangle */}
+        <div className="hero-image-wrap">
+          <img src="/Daprotis.jpg" alt="Daprotis Futvoley" className="hero-logo hero-outside" />
+        </div>
+
         <section className="hero">
           <div className="hero-content">
-            <h1>Aprende futvoley en Mar del Plata</h1>
-            <p className="hero-sub">Entrenamiento profesional de lunes a viernes</p>
 
-            <div className="feature-cards">
-              <div className="feature">
-                <div className="feature-icon">👥</div>
-                <div className="feature-title">Grupos Reducidos</div>
-              </div>
-              <div className="feature">
-                <div className="feature-icon">🕒</div>
-                <div className="feature-title">Horarios Flexibles</div>
-              </div>
-              <div className="feature">
-                <div className="feature-icon">🏆</div>
-                <div className="feature-title">Instructores Pro</div>
-              </div>
+            <div className="hero-text">
+              <p>
+                Daprotis es la primera escuela de futvoley de Mar del Plata.  Entrenamos todo el año, de lunes a viernes, con clases adaptadas a todos los niveles.
+                            
+              </p>
+              <p>
+                Cada entrenamiento combina técnica, preparación física, coordinación y juego real, en un ambiente único de playa, deporte y comunidad.
+              </p>
             </div>
           </div>
         </section>

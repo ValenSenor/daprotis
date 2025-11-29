@@ -24,7 +24,6 @@ export default function Dashboard(){
     email: '',
     phone: '',
     dob: '',
-    address: ''
   })
   const [profileErrors, setProfileErrors] = useState({})
 
@@ -54,8 +53,7 @@ export default function Dashboard(){
         lastName: profile.last_name || '',
         email: user?.email || '',
         phone: profile.phone || '',
-        dob: profile.date_of_birth || '',
-        address: profile.address || ''
+        dob: profile.date_of_birth || ''
       })
     }
     loadSchedules()
@@ -122,7 +120,6 @@ export default function Dashboard(){
             last_name: profileData.lastName,
             phone: profileData.phone,
             date_of_birth: profileData.dob,
-            address: profileData.address
           })
           .eq('id', user.id)
 
@@ -303,14 +300,7 @@ export default function Dashboard(){
               {profileErrors.dob && <span className="error-text">{profileErrors.dob}</span>}
             </label>
 
-            <label>
-              Dirección
-              <input 
-                type="text" 
-                value={profileData.address}
-                onChange={(e) => handleProfileChange('address', e.target.value)}
-              />
-            </label>
+            {/* Dirección field removed per request */}
 
             <button type="submit" className="btn-primary" style={{marginTop:'0.5rem'}}>
               Guardar cambios
@@ -339,15 +329,15 @@ export default function Dashboard(){
           <div style={{display:'flex',gap:'0.4rem',marginBottom:'1rem',flexWrap:'nowrap',alignItems:'center',justifyContent:'space-between'}}>
             <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
               <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>3 x semana</div>
-              <div style={{fontSize:'0.85rem',fontWeight:700}}>$31.000</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700,color:'#0c0c0c'}}>$31.000</div>
             </div>
             <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
               <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>2 x semana</div>
-              <div style={{fontSize:'0.85rem',fontWeight:700}}>$26.000</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700,color:'#0c0c0c'}}>$26.000</div>
             </div>
             <div style={{flex:'1 1 90px',minWidth:'70px',background:'#f9fafb',padding:'0.35rem 0.4rem',borderRadius:'8px',border:'1px solid #e6e9ef',textAlign:'center'}}>
               <div style={{fontSize:'0.72rem',color:'var(--muted)',marginBottom:'0.2rem',fontWeight:600}}>Clase personal</div>
-              <div style={{fontSize:'0.85rem',fontWeight:700}}>$10.000</div>
+              <div style={{fontSize:'0.85rem',fontWeight:700,color:'#0c0c0c'}}>$10.000</div>
             </div>
           </div>
 
@@ -402,9 +392,9 @@ export default function Dashboard(){
                 return (
                   <div key={schedule.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e6e9ef' }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '1rem' }}>{schedule.day_of_week} — {schedule.time_slot}</div>
+                      <div style={{ fontWeight: 600, fontSize: '1rem', color: '#0c0c0c' }}>{schedule.day_of_week} — {schedule.time_slot}</div>
                       {schedule.max_capacity != null && (
-                        <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Capacidad: {schedule.max_capacity}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#0c0c0c' }}>Capacidad: {schedule.max_capacity}</div>
                       )}
                     </div>
                     <div>
@@ -413,8 +403,8 @@ export default function Dashboard(){
                         className="btn-enroll"
                         disabled={loading}
                         style={{
-                          background: enrolled ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,var(--blue-1),var(--blue-2))',
-                          color: 'white',
+                          background: 'rgb(250,234,5)',
+                          color: '#0c0c0c',
                           padding: '0.5rem 1rem',
                           borderRadius: '8px',
                           border: 'none',

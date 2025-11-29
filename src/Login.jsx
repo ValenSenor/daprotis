@@ -199,7 +199,7 @@ export default function Login(){
             ) : (
               <p>¿Ya tienes cuenta? <button type="button" className="link-btn" onClick={()=>setMode('login')}>Iniciar sesión</button></p>
             )}
-            <p><Link to="/">Volver al inicio</Link></p>
+            <p><Link to="/" className="link-back">Volver al inicio</Link></p>
           </div>
         </div>
       </div>

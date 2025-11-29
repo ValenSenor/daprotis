@@ -10,8 +10,9 @@
 body{
   margin:0;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-  background:var(--bg);
-  color:var(--text);
+  /* Black to gray vertical gradient for the page background */
+  background: linear-gradient(180deg, #000000 0%, #4b5563 100%);
+  color: white; /* keep base text readable over the dark background */
   overflow-x:hidden;
   display:flex;
   justify-content:center;
@@ -36,7 +37,7 @@ body{
 .site-header{
   display:flex;
   align-items:center;
-  justify-content:space-between;
+  justify-content:center;
   padding:1.25rem 0;
 }
 .logo-wrap{
@@ -61,37 +62,111 @@ body{
   color:var(--muted)
 }
 .btn-login{
-  background:white;padding:0.6rem 1rem;border-radius:10px;color:var(--blue-1);text-decoration:none;font-weight:600;
+  background:rgb(250, 234, 5);
+  padding:0.8rem 1.25rem;
+  border-radius:10px;
+  color:#0c0c0c;
+  text-decoration:none;
+  font-weight:700;
+  font-size:1rem;
   box-shadow:0 6px 20px rgba(16,24,40,0.06);
+  min-width:120px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
 
 /* Hero - Ancho completo */
 .hero{
   width:calc(100% - 2rem);
-  margin:0.5rem 1rem 0;
-  border-radius:12px;
-  background:linear-gradient(90deg,var(--blue-1),var(--blue-2));
-  color:white;
-  padding:2.5rem 1.5rem;
+  margin:0.25rem 1rem 0;
+  border-radius:0; /* no rounded rectangle */
+  background:transparent; /* remove blue background */
+  color:inherit; /* keep normal text color */
+  padding:0.5rem 1.5rem; /* small vertical spacing */
   box-sizing:border-box;
   display:flex;
   justify-content:center;
   align-items:center;
-  box-shadow:0 10px 40px rgba(14,78,255,0.12);
+  box-shadow:none; /* remove shadow */
+  min-height:0;
 }
 .hero-content{
-  max-width:980px;
+  max-width:1100px;
   width:100%;
   margin:0 auto;
-  padding:0 1rem;
+  padding:0 0.5rem;
   text-align:center;
   display:flex;
   flex-direction:column;
   align-items:center;
   box-sizing:border-box;
 }
+/* Hero text block — wider and closer to edges */
+.hero-text{
+  width:100%;
+  max-width:1200px; /* allow large screens to expand */
+  margin:0 auto;
+  padding:1rem 12px;
+  box-sizing:border-box;
+  text-align:center;
+  font-size:1.05rem;
+  line-height:1.4;
+  color: white; /* inherit contrast from page */
+}
 .hero h1{font-size:3rem;margin:0 0 0.4rem;line-height:1.02;font-weight:800}
 .hero-sub{opacity:0.95;margin-bottom:1.75rem;font-size:1.5rem}
+
+/* Logo inside hero */
+.hero-logo{max-height:80px;width:auto;display:block;margin:0 auto}
+
+/* Put logo outside the hero rectangle */
+.hero-image-wrap{
+  display:flex;
+  justify-content:center;
+  margin:0.6rem 0 0;
+  z-index:5;
+  width:100%;
+  border-radius:10px;
+  overflow:hidden;
+}
+.hero-image-wrap .hero-logo{width:100%;max-height:220px;height:auto;display:block;object-fit:cover}
+
+/* Make the hero image full-bleed on small screens (edge-to-edge) */
+@media (max-width:768px){
+  .hero-image-wrap{
+    position:relative;
+    left:50%;
+    transform:translateX(-50%);
+    /* keep a small gutter so rounded corners remain visible on mobile */
+    width: calc(100vw - 24px);
+    max-width:100vw;
+    padding:0; /* remove any inner padding so image touches container edges */
+    display:block;
+    border-radius:10px;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .hero-image-wrap .hero-logo{
+    width:100%;
+    max-width:none;
+    max-height:180px;
+    height:auto;
+    display:block;
+    object-fit:cover;
+  }
+}
+
+/* Larger screens: let hero-text spread wider towards edges */
+@media (min-width:900px){
+  .hero-content{ max-width:1300px }
+  .hero-text{ max-width:1150px; padding:1rem 16px; }
+}
+
+/* Mobile: make hero-text almost full-bleed */
+@media (max-width:768px){
+  .hero-text{ max-width: calc(100vw - 16px) !important; padding:0.75rem 8px !important; font-size:1rem }
+}
 
 .feature-cards{
   display:flex;
@@ -102,9 +177,9 @@ body{
   width:100%;
   box-sizing:border-box;
 }
-.feature{background:rgba(255,255,255,0.12);backdrop-filter:blur(6px);padding:1.2rem 1.4rem;border-radius:10px;min-width:140px;box-shadow:0 6px 18px rgba(2,6,23,0.06);max-width:320px;box-sizing:border-box}
-.feature-icon{font-size:1.6rem;margin-bottom:0.5rem}
-.feature-title{font-weight:700}
+  .feature{background:white;padding:1.2rem 1.4rem;border-radius:10px;min-width:140px;box-shadow:0 6px 18px rgba(2,6,23,0.06);max-width:320px;box-sizing:border-box;color:var(--text)}
+  .feature-icon{font-size:1.6rem;margin-bottom:0.5rem;color:var(--blue-1)}
+  .feature-title{font-weight:700;color:var(--text)}
 
 /* Why section - Centrada */
 .why{
@@ -124,7 +199,7 @@ body{
 .why h2{text-align:center;margin-bottom:1.25rem;font-size:1.6rem}
 .why-cards{display:grid;grid-template-columns:1fr;gap:1rem;max-width:980px;margin:0 auto}
 .why-card{background:white;padding:1.25rem;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.06);text-align:center;box-sizing:border-box;width:100%}
-.why-card h3{color:var(--blue-1);margin:0 0 0.5rem}
+.why-card h3{color:#000000;margin:0 0 0.5rem}
 .why-card p{color:var(--muted);margin:0}
 
 /* Footer */
@@ -184,8 +259,8 @@ body{
   box-sizing:border-box;
 }
 .btn-primary{
-  background:linear-gradient(90deg,var(--blue-1),var(--blue-2));
-  color:white;
+  background: rgb(250,234,5);
+  color: #0c0c0c;
   padding:0.55rem 0.9rem;
   border-radius:10px;
   border:none;font-weight:700;cursor:pointer}
@@ -193,8 +268,16 @@ body{
 
 /* small utility for link-like buttons inside auth footer */
 .link-btn{
-  background:none;border:none;color:var(--blue-1);text-decoration:underline;padding:0;cursor:pointer;font-weight:600}
+  background:none;border:none;color: #f80303;text-decoration:underline;padding:0;cursor:pointer;font-weight:600}
 .link-btn:focus{outline:2px solid rgba(30,111,255,0.12);border-radius:4px}
+
+/* Link used in Login auth-footer: Volver al inicio */
+.link-back{
+  color:#ef4444;
+  font-weight:700;
+  text-decoration:none;
+}
+.link-back:hover{ text-decoration:underline }
 
 /* error styles */
 .input-error{border-color:#e11d48}
@@ -218,6 +301,7 @@ body{
 }
 .user-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem}
 .user-name{font-weight:600;font-size:1rem;margin-bottom:0.25rem}
+.user-name{color:#0c0c0c}
 .user-phone{font-size:0.85rem;color:var(--muted)}
 .user-badge{padding:0.25rem 0.75rem;border-radius:12px;font-size:0.75rem;font-weight:600;background:#d1fae5;color:#065f46;white-space:nowrap}
 .user-badge.unpaid{background: #fee2e2; color: #dc2626}
@@ -225,7 +309,7 @@ body{
 .muted.small{font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem}
 .small-input{padding:0.4rem;border-radius:6px;border:1px solid #e6e9ef;font-size:0.85rem;width:100%}
 .last-payment{font-size:0.9rem;color:var(--muted)}
-.edit-btn{padding:0.5rem 1rem;font-size:0.85rem;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+.edit-btn{padding:0.5rem 1rem;font-size:0.85rem;background: rgb(250,234,5);color:#0c0c0c;border:none;border-radius:6px;cursor:pointer;font-weight:600}
 
 /* Responsive */
 @media (min-width:700px){
@@ -274,14 +358,14 @@ body{
   .site-header{
     flex-direction:row;
     align-items:center;
-    justify-content:space-between;
+    justify-content:center;
     gap:0.75rem;
     padding:0.75rem 0;
     width:100%;
   }
   .btn-login{
-    padding:0.5rem 0.75rem;
-    font-size:0.85rem;
+    padding:0.7rem 1rem;
+    font-size:0.95rem;
     white-space:nowrap;
     flex-shrink:0;
     margin-right:0;
@@ -290,7 +374,7 @@ body{
   .site-tagline{font-size:0.75rem;}
   .logo-icon{width:40px;height:40px;font-size:18px;}
   .hero{
-    padding:1.75rem 1.25rem;
+    padding:1rem 1.25rem;
     margin:0.5rem 1rem 0;
     border-radius:12px;
     width:calc(100% - 2rem);
@@ -309,7 +393,7 @@ body{
   .feature{min-width:0;width:100%;display:flex;align-items:center;gap:0.75rem;padding:0.9rem 1rem}
   .feature-icon{font-size:1.35rem}
   .feature-title{font-size:0.98rem}
-  .why h2{text-align:left;padding-left:0.25rem;font-size:clamp(1.3rem, 4vw, 1.6rem)}
+  .why h2{text-align:center;padding-left:0;padding-right:0;font-size:clamp(1.3rem, 4vw, 1.6rem)}
   .why-cards{grid-template-columns:1fr;gap:0.85rem}
   .why-card{padding:1rem;text-align:center}
   .why-card h3{font-size:1rem}
@@ -361,5 +445,23 @@ body{
     text-align: center;
     margin-top: auto; 
     padding-top: 2rem;
+  }
+
+  /* Reduce side gutters and let text span further across mobile screens */
+  .hero{
+    margin:0.4rem 8px 0 !important;
+    width:calc(100% - 16px) !important;
+    padding:0.6rem 6px !important;
+  }
+
+  .hero-content{
+    max-width:calc(100% - 8px) !important;
+    padding:0 !important;
+  }
+
+  .hero-text{
+    max-width: calc(100% - 8px) !important;
+    padding: 0.5rem 4px !important;
+    text-align:center;
   }
 }
