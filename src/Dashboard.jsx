@@ -144,17 +144,36 @@ export default function Dashboard(){
 
   async function toggleEnrollment(scheduleId, day, hour){
     try {
+      if (!user || !user.id) {
+        console.warn('toggleEnrollment: no user or missing user.id', user)
+        alert('Debes iniciar sesión para anotarte')
+        return
+      }
+
+      const scheduleObj = schedules.find(s => s.id === scheduleId)
+      if (!scheduleObj) {
+        console.warn('toggleEnrollment: schedule not found for id', scheduleId)
+        alert('Horario no encontrado. Intenta recargar la página.')
+        return
+      }
+
       const isCurrentlyEnrolled = isEnrolled(scheduleId)
       
       if (isCurrentlyEnrolled) {
         // Dar de baja
         const enrollment = enrollments.find(e => e.schedule_id === scheduleId)
-        const { error } = await supabase
+        const { data: delData, error: delError } = await supabase
           .from('enrollments')
           .delete()
           .eq('id', enrollment.id)
-        
-        if (error) throw error
+
+        if (delError) {
+          console.error('Error deleting enrollment:', delError)
+          alert(`Error al darte de baja: ${delError.message || delError}`)
+          throw delError
+        }
+
+        console.log('Deleted enrollment response:', delData)
         alert(`Te diste de baja de ${day} - ${hour}`)
       } else {
         // Inscribirse: regla mensual
@@ -162,12 +181,20 @@ export default function Dashboard(){
         const dayOfMonth = today.getDate()
 
         // Del 1 al 7: permitir inscripción sin chequear pago
-        if (dayOfMonth >= 1 && dayOfMonth <= 7) {
-          const { error } = await supabase
+          if (dayOfMonth >= 1 && dayOfMonth <= 7) {
+          // quick insert without payment checks
+          console.log('Attempting enrollment insert payload:', { user_id: user.id, schedule_id: scheduleId, status: 'active' })
+          const { data: insertData, error: insertError } = await supabase
             .from('enrollments')
             .insert({ user_id: user.id, schedule_id: scheduleId, status: 'active' })
 
-          if (error) throw error
+          if (insertError) {
+            console.error('Error inserting enrollment (day 1-7):', insertError)
+            alert(`Error al procesar la inscripción: ${insertError.message || insertError}`)
+            throw insertError
+          }
+
+          console.log('Enrollment created (day 1-7):', insertData)
           alert(`Te inscribiste a ${day} - ${hour}`)
         } else {
           // Después del día 7: verificar que el último pago sea del mes actual
@@ -204,17 +231,28 @@ export default function Dashboard(){
               .gte('enrolled_at', start)
               .lt('enrolled_at', end)
 
-            if (countRes.error) throw countRes.error
+            if (countRes.error) {
+              console.error('Error counting enrollments:', countRes.error)
+              alert(`Error al procesar la inscripción: ${countRes.error.message || countRes.error}`)
+              throw countRes.error
+            }
             const currentCount = countRes.count || 0
 
             if (currentCount >= limit) {
               alert(`No podés anotarte a más de ${limit} entrenamientos por semana.`)
             } else {
-              const { error } = await supabase
+              console.log('Attempting enrollment insert payload (post-7):', { user_id: user.id, schedule_id: scheduleId, status: 'active' })
+              const { data: insertData2, error: insertError2 } = await supabase
                 .from('enrollments')
                 .insert({ user_id: user.id, schedule_id: scheduleId, status: 'active' })
 
-              if (error) throw error
+              if (insertError2) {
+                console.error('Error inserting enrollment (post-7):', insertError2)
+                alert(`Error al procesar la inscripción: ${insertError2.message || insertError2}`)
+                throw insertError2
+              }
+
+              console.log('Enrollment created (post-7):', insertData2)
               alert(`Te inscribiste a ${day} - ${hour}`)
             }
         }
@@ -223,8 +261,10 @@ export default function Dashboard(){
       // Recargar inscripciones
       await loadEnrollments()
     } catch (error) {
+      // Provide more info in console and show specific message when available
       console.error('Error toggling enrollment:', error)
-      alert('Error al procesar la inscripción')
+      const msg = (error && (error.message || error.error || error.description)) || 'Error al procesar la inscripción'
+      alert(msg)
     }
   }
 
