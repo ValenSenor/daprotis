@@ -16,6 +16,7 @@ export default function Dashboard(){
   const [schedules, setSchedules] = useState([])
   const [enrollments, setEnrollments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
   
   // User profile data - ahora viene del contexto
   const [profileData, setProfileData] = useState({
@@ -169,8 +170,10 @@ export default function Dashboard(){
 
         if (delError) {
           console.error('Error deleting enrollment:', delError)
-          alert(`Error al darte de baja: ${delError.message || delError}`)
-          throw delError
+          const m = delError?.message || String(delError)
+          setErrorMessage(`Error al darte de baja: ${m}`)
+          setLoading(false)
+          return
         }
 
         console.log('Deleted enrollment response:', delData)
@@ -190,8 +193,10 @@ export default function Dashboard(){
 
           if (insertError) {
             console.error('Error inserting enrollment (day 1-7):', insertError)
-            alert(`Error al procesar la inscripción: ${insertError.message || insertError}`)
-            throw insertError
+            const m = insertError?.message || String(insertError)
+            setErrorMessage(`Error al procesar la inscripción: ${m}`)
+            setLoading(false)
+            return
           }
 
           console.log('Enrollment created (day 1-7):', insertData)
@@ -233,8 +238,10 @@ export default function Dashboard(){
 
             if (countRes.error) {
               console.error('Error counting enrollments:', countRes.error)
-              alert(`Error al procesar la inscripción: ${countRes.error.message || countRes.error}`)
-              throw countRes.error
+              const m = countRes.error?.message || String(countRes.error)
+              setErrorMessage(`Error al procesar la inscripción: ${m}`)
+              setLoading(false)
+              return
             }
             const currentCount = countRes.count || 0
 
@@ -248,8 +255,10 @@ export default function Dashboard(){
 
               if (insertError2) {
                 console.error('Error inserting enrollment (post-7):', insertError2)
-                alert(`Error al procesar la inscripción: ${insertError2.message || insertError2}`)
-                throw insertError2
+                const m = insertError2?.message || String(insertError2)
+                setErrorMessage(`Error al procesar la inscripción: ${m}`)
+                setLoading(false)
+                return
               }
 
               console.log('Enrollment created (post-7):', insertData2)
@@ -264,7 +273,8 @@ export default function Dashboard(){
       // Provide more info in console and show specific message when available
       console.error('Error toggling enrollment:', error)
       const msg = (error && (error.message || error.error || error.description)) || 'Error al procesar la inscripción'
-      alert(msg)
+      setErrorMessage(msg)
+      setLoading(false)
     }
   }
 
@@ -275,6 +285,33 @@ export default function Dashboard(){
   function getScheduleId(day, hour) {
     const schedule = schedules.find(s => s.day_of_week === day && s.time_slot === hour)
     return schedule?.id
+  }
+
+  // Mostrar mensaje de error no bloqueante (se muestra hasta cerrar)
+  if (errorMessage) {
+    return (
+      <div className="page page-center">
+        <div className="auth-card" style={{maxWidth:520}}>
+          <h2>Atención</h2>
+          <p style={{color:'var(--muted)',marginBottom:'1rem'}}>{errorMessage}</p>
+          <div style={{display:'flex',gap:'0.5rem',justifyContent:'flex-end'}}>
+            <button
+              onClick={() => setErrorMessage('')}
+              className="btn-primary"
+              style={{minHeight:'40px'}}
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={() => { setErrorMessage(''); setView('menu') }}
+              style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',textDecoration:'underline'}}
+            >
+              Volver al menú
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if(view === 'profile'){
